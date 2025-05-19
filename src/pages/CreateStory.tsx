@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { ImageIcon, MapPin, Send } from "lucide-react";
+import { ImageIcon, MapPin, Send, Video } from "lucide-react";
 
 const CreateStory = () => {
   const navigate = useNavigate();
@@ -15,7 +15,9 @@ const CreateStory = () => {
   const [location, setLocation] = useState("");
   const [content, setContent] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const handleImageUpload = () => {
     // This would usually be a real file upload
@@ -29,11 +31,24 @@ const CreateStory = () => {
     }, 1500);
   };
 
+  const handleVideoUpload = () => {
+    // This would usually be a real video file upload
+    setIsUploadingVideo(true);
+    setTimeout(() => {
+      setVideos([
+        ...videos,
+        // Sample video URL from a free stock video site
+        "https://joy1.videvo.net/videvo_files/video/free/video0467/large_watermarked/_import_60e0267b4c3a96.16473365_preview.mp4"
+      ]);
+      setIsUploadingVideo(false);
+    }, 2000);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !location || !content || images.length === 0) {
-      toast.error("Please fill in all fields and add at least one image");
+    if (!title || !location || !content || (images.length === 0 && videos.length === 0)) {
+      toast.error("Please fill in all fields and add at least one image or video");
       return;
     }
     
@@ -82,7 +97,7 @@ const CreateStory = () => {
           <Label>Photos</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {images.map((image, index) => (
-              <div key={index} className="aspect-[4/3] relative rounded-md overflow-hidden">
+              <div key={`img-${index}`} className="aspect-[4/3] relative rounded-md overflow-hidden">
                 <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
               </div>
             ))}
@@ -96,6 +111,33 @@ const CreateStory = () => {
             >
               <ImageIcon size={24} />
               <span>{isUploading ? "Uploading..." : "Add Photo"}</span>
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Label>Videos</Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {videos.map((video, index) => (
+              <div key={`vid-${index}`} className="aspect-video relative rounded-md overflow-hidden">
+                <video 
+                  src={video} 
+                  className="w-full h-full object-cover" 
+                  controls 
+                  muted 
+                />
+              </div>
+            ))}
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleVideoUpload}
+              className="aspect-video border-dashed flex flex-col items-center justify-center gap-2"
+              disabled={isUploadingVideo}
+            >
+              <Video size={24} />
+              <span>{isUploadingVideo ? "Uploading..." : "Add Video"}</span>
             </Button>
           </div>
         </div>

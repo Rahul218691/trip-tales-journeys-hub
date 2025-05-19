@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MapPin } from "lucide-react";
+import { Heart, MapPin, Play } from "lucide-react";
 import CommentSection from "@/components/CommentSection";
 
 // Sample story details
@@ -16,6 +16,9 @@ const story = {
     "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
     "https://images.unsplash.com/photo-1433086966358-54859d0ed716?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
     "https://images.unsplash.com/photo-1504893524553-b855bce32c67?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  ],
+  videos: [
+    "https://joy1.videvo.net/videvo_files/video/free/video0467/large_watermarked/_import_60e0267b4c3a96.16473365_preview.mp4"
   ],
   author: {
     name: "Julia Chen",
@@ -117,6 +120,29 @@ const StoryDetail = () => {
           />
         </div>
       </div>
+
+      {story.videos && story.videos.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Videos</h2>
+          <div className="grid grid-cols-1 gap-4">
+            {story.videos.map((video, index) => (
+              <div key={index} className="aspect-video relative rounded-lg overflow-hidden shadow-md">
+                <video 
+                  src={video} 
+                  className="w-full h-full object-cover"
+                  controls
+                  poster={story.images[0]}
+                >
+                  Your browser does not support the video tag.
+                </video>
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                  <Play size={64} className="text-white" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-16">
         <div className="w-3/4">
