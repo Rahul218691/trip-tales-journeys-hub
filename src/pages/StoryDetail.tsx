@@ -19,7 +19,9 @@ const story = {
     "https://images.unsplash.com/photo-1504893524553-b855bce32c67?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
   ],
   videos: [
-    "https://joy1.videvo.net/videvo_files/video/free/video0467/large_watermarked/_import_60e0267b4c3a96.16473365_preview.mp4"
+    "https://joy1.videvo.net/videvo_files/video/free/video0467/large_watermarked/_import_60e0267b4c3a96.16473365_preview.mp4",
+    "https://joy1.videvo.net/videvo_files/video/free/2013-08/large_watermarked/_import_20130806_140157_preview.mp4",
+    "https://joy1.videvo.net/videvo_files/video/free/2019-05/large_watermarked/_import_5cf0cd56929bc4.97263447_preview.mp4"
   ],
   author: {
     name: "Julia Chen",
@@ -65,7 +67,13 @@ const StoryDetail = () => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(story.likes);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [initialImageIndex, setInitialImageIndex] = useState(0);
+  const [initialMediaIndex, setInitialMediaIndex] = useState(0);
+  
+  // Create a combined media array for the viewer
+  const mediaItems = [
+    ...story.images.map(src => ({ type: "image", src } as const)),
+    ...story.videos.map(src => ({ type: "video", src } as const))
+  ];
   
   const toggleLike = () => {
     if (liked) {
@@ -76,8 +84,14 @@ const StoryDetail = () => {
     setLiked(!liked);
   };
 
-  const openImageViewer = (index: number) => {
-    setInitialImageIndex(index);
+  const openMediaViewer = (index: number) => {
+    setInitialMediaIndex(index);
+    setViewerOpen(true);
+  };
+
+  const openVideoViewer = (videoIndex: number) => {
+    // Offset by the number of images to get the correct index in the combined array
+    setInitialMediaIndex(story.images.length + videoIndex);
     setViewerOpen(true);
   };
 
@@ -111,7 +125,7 @@ const StoryDetail = () => {
             src={story.images[0]} 
             alt={story.title} 
             className="w-full h-[500px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
-            onClick={() => openImageViewer(0)}
+            onClick={() => openMediaViewer(0)}
           />
         </div>
         <div>
@@ -119,7 +133,7 @@ const StoryDetail = () => {
             src={story.images[1]} 
             alt={story.title} 
             className="w-full h-[240px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
-            onClick={() => openImageViewer(1)}
+            onClick={() => openMediaViewer(1)}
           />
         </div>
         <div>
@@ -127,15 +141,15 @@ const StoryDetail = () => {
             src={story.images[2]} 
             alt={story.title} 
             className="w-full h-[240px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
-            onClick={() => openImageViewer(2)}
+            onClick={() => openMediaViewer(2)}
           />
         </div>
       </div>
 
-      {/* Image Viewer */}
+      {/* Media Viewer */}
       <ImageViewer 
-        images={story.images} 
-        initialIndex={initialImageIndex}
+        mediaItems={mediaItems} 
+        initialIndex={initialMediaIndex}
         open={viewerOpen}
         onOpenChange={setViewerOpen}
       />
@@ -143,18 +157,21 @@ const StoryDetail = () => {
       {story.videos && story.videos.length > 0 && (
         <div className="mb-10">
           <h2 className="text-2xl font-semibold mb-4">Videos</h2>
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {story.videos.map((video, index) => (
-              <div key={index} className="aspect-video relative rounded-lg overflow-hidden shadow-md">
+              <div 
+                key={index} 
+                className="aspect-video relative rounded-lg overflow-hidden shadow-md cursor-pointer"
+                onClick={() => openVideoViewer(index)}
+              >
                 <video 
                   src={video} 
                   className="w-full h-full object-cover"
-                  controls
                   poster={story.images[0]}
                 >
                   Your browser does not support the video tag.
                 </video>
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center hover:bg-black/30 transition-colors">
                   <Play size={64} className="text-white" />
                 </div>
               </div>
@@ -163,8 +180,8 @@ const StoryDetail = () => {
         </div>
       )}
 
-      <div className="flex gap-16">
-        <div className="w-3/4">
+      <div className="flex flex-col lg:flex-row gap-8">
+        <div className="w-full lg:w-3/4">
           <div 
             className="prose max-w-none mb-10"
             dangerouslySetInnerHTML={{ __html: story.content }}
@@ -186,7 +203,7 @@ const StoryDetail = () => {
           <CommentSection comments={story.comments} />
         </div>
 
-        <div className="w-1/4">
+        <div className="w-full lg:w-1/4 mt-8 lg:mt-0">
           {/* Sidebar content can be added later */}
         </div>
       </div>
