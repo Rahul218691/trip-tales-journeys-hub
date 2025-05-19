@@ -11,6 +11,8 @@ import TripsPage from "./pages/TripsPage";
 import TripDetail from "./pages/TripDetail";
 import CreateStory from "./pages/CreateStory";
 import CreateTrip from "./pages/CreateTrip";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
 import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
@@ -31,6 +33,8 @@ const App = () => (
               <Route path="/trip/:id" element={<TripDetail />} />
               <Route path="/create" element={<CreateStory />} />
               <Route path="/create-trip" element={<CreateTrip />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
