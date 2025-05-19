@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MapPin, Play } from "lucide-react";
 import CommentSection from "@/components/CommentSection";
+import ImageViewer from "@/components/ImageViewer";
 
 // Sample story details
 const story = {
@@ -63,6 +64,8 @@ const StoryDetail = () => {
   const { id } = useParams();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(story.likes);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [initialImageIndex, setInitialImageIndex] = useState(0);
   
   const toggleLike = () => {
     if (liked) {
@@ -71,6 +74,11 @@ const StoryDetail = () => {
       setLikeCount(likeCount + 1);
     }
     setLiked(!liked);
+  };
+
+  const openImageViewer = (index: number) => {
+    setInitialImageIndex(index);
+    setViewerOpen(true);
   };
 
   return (
@@ -102,24 +110,35 @@ const StoryDetail = () => {
           <img 
             src={story.images[0]} 
             alt={story.title} 
-            className="w-full h-[500px] object-cover rounded-lg"
+            className="w-full h-[500px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
+            onClick={() => openImageViewer(0)}
           />
         </div>
         <div>
           <img 
             src={story.images[1]} 
             alt={story.title} 
-            className="w-full h-[240px] object-cover rounded-lg"
+            className="w-full h-[240px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
+            onClick={() => openImageViewer(1)}
           />
         </div>
         <div>
           <img 
             src={story.images[2]} 
             alt={story.title} 
-            className="w-full h-[240px] object-cover rounded-lg"
+            className="w-full h-[240px] object-cover rounded-lg cursor-pointer transition-transform hover:opacity-90"
+            onClick={() => openImageViewer(2)}
           />
         </div>
       </div>
+
+      {/* Image Viewer */}
+      <ImageViewer 
+        images={story.images} 
+        initialIndex={initialImageIndex}
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+      />
 
       {story.videos && story.videos.length > 0 && (
         <div className="mb-10">
