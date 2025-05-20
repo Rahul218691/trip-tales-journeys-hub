@@ -14,8 +14,15 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { useState } from "react";
 
 const Navbar = () => {
+  const [open, setOpen] = useState(false);
+  
+  const handleLinkClick = () => {
+    setOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between">
@@ -47,7 +54,7 @@ const Navbar = () => {
           </Link>
           
           {/* Mobile menu trigger */}
-          <Sheet>
+          <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild className="md:hidden">
               <Button variant="ghost" size="icon">
                 <Menu size={20} />
@@ -55,25 +62,25 @@ const Navbar = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[250px] sm:w-[300px]">
               <div className="flex flex-col space-y-4 py-4">
-                <Link to="/" className="px-2 py-2 hover:bg-accent rounded-md">Stories</Link>
-                <Link to="/trips" className="px-2 py-2 hover:bg-accent rounded-md">Upcoming Trips</Link>
-                <Link to="/create" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2">
+                <Link to="/" className="px-2 py-2 hover:bg-accent rounded-md" onClick={handleLinkClick}>Stories</Link>
+                <Link to="/trips" className="px-2 py-2 hover:bg-accent rounded-md" onClick={handleLinkClick}>Upcoming Trips</Link>
+                <Link to="/create" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2" onClick={handleLinkClick}>
                   <Plus size={16} />
                   <span>New Story</span>
                 </Link>
-                <Link to="/create-trip" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2">
+                <Link to="/create-trip" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2" onClick={handleLinkClick}>
                   <Calendar size={16} />
                   <span>Plan Trip</span>
                 </Link>
-                <Link to="/messages" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2">
+                <Link to="/messages" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2" onClick={handleLinkClick}>
                   <MessageCircle size={16} />
                   <span>Messages</span>
                 </Link>
-                <Link to="/profile" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2">
+                <Link to="/profile" className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2" onClick={handleLinkClick}>
                   <User size={16} />
                   <span>Profile</span>
                 </Link>
-                <div className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2 cursor-pointer text-destructive">
+                <div className="px-2 py-2 hover:bg-accent rounded-md flex items-center gap-2 cursor-pointer text-destructive" onClick={handleLinkClick}>
                   <LogOut size={16} />
                   <span>Logout</span>
                 </div>
@@ -81,14 +88,14 @@ const Navbar = () => {
             </SheetContent>
           </Sheet>
 
-          {/* User profile dropdown (visible only on mobile) */}
+          {/* User profile dropdown (visible only on medium and larger screens) */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className="hidden md:flex">
               <div className="h-8 w-8 rounded-full bg-ocean flex items-center justify-center text-white font-medium cursor-pointer">
                 U
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 md:hidden">
+            <DropdownMenuContent className="w-48">
               <Link to="/profile">
                 <DropdownMenuItem className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
