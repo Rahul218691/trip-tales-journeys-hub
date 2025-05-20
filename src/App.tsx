@@ -13,6 +13,7 @@ import CreateStory from "./pages/CreateStory";
 import CreateTrip from "./pages/CreateTrip";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import Messages from "./pages/Messages";
 import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/create" element={<CreateStory />} />
               <Route path="/create-trip" element={<CreateTrip />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/messages" element={<Messages />} />
               <Route path="/login" element={<Login />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
