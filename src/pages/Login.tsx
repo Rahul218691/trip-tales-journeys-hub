@@ -1,22 +1,40 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { useGoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const login = useGoogleLogin({
+    onSuccess: async (response) => {
+      try {
+        setIsLoading(true);
+        // Here you would typically send the access token to your backend
+        // const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        //   headers: { Authorization: `Bearer ${response.access_token}` },
+        // }).then(res => res.json());
+        console.log(response)
+        toast.success("Successfully logged in!");
+        navigate("/");
+      } catch (error) {
+        toast.error("Failed to login");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => {
+      toast.error("Login failed");
+      setIsLoading(false);
+    }
+  });
+
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success("Successfully logged in!");
-      navigate("/");
-    }, 1500);
+    login();
   };
 
   return (
