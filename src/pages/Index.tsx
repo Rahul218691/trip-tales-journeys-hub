@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StoryCard from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { Filter, ArrowRight } from "lucide-react";
+import FilterModal from "@/components/FilterModal";
+import Pagination from "@/components/Pagination";
 
 // Sample data for stories
 const popularStories = [
@@ -86,6 +87,18 @@ const recentStories = [
 ];
 
 const Index = () => {
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("popular");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const storiesData = activeTab === "popular" ? popularStories : recentStories;
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setCurrentPage(1); // Reset to first page when changing tabs
+  };
+  
   return (
     <div className="container py-8">
       {/* Hero section */}
@@ -123,12 +136,16 @@ const Index = () => {
       <section className="mb-16">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Travel Stories</h2>
-          <Link to="/stories" className="text-primary flex items-center gap-1 story-link">
-            See all <ArrowRight size={16} />
-          </Link>
+          <Button 
+            variant="ghost" 
+            onClick={() => setIsFilterModalOpen(true)} 
+            className="text-primary flex items-center gap-1"
+          >
+            Filter <Filter size={16} />
+          </Button>
         </div>
 
-        <Tabs defaultValue="popular" className="w-full">
+        <Tabs defaultValue="popular" className="w-full" onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="popular">Popular</TabsTrigger>
             <TabsTrigger value="recent">Recent</TabsTrigger>
@@ -139,12 +156,28 @@ const Index = () => {
                 <StoryCard key={story.id} {...story} />
               ))}
             </div>
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                hasNextPage={false}
+                hasPrevPage={false}
+              />
+            </div>
           </TabsContent>
           <TabsContent value="recent" className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recentStories.map(story => (
                 <StoryCard key={story.id} {...story} />
               ))}
+            </div>
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                hasNextPage={false}
+                hasPrevPage={false}
+              />
             </div>
           </TabsContent>
         </Tabs>
@@ -160,6 +193,12 @@ const Index = () => {
           <Button>Create a Trip</Button>
         </Link>
       </section>
+      
+      {/* Filter modal */}
+      <FilterModal 
+        isOpen={isFilterModalOpen} 
+        onClose={() => setIsFilterModalOpen(false)} 
+      />
     </div>
   );
 };
