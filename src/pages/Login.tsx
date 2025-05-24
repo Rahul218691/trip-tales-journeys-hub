@@ -1,40 +1,29 @@
-import { useState } from "react";
+import { useContext, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
+import { AuthContext } from "@/context/AuthContext";
+import { login as authLogin } from "@/services/auth";
+import { SET_USER_INFO } from "@/lib/constants";
 
 const Login = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
+  const googleLoginRef = useRef<HTMLDivElement>(null);
 
-  const login = useGoogleLogin({
-    onSuccess: async (response) => {
-      try {
-        setIsLoading(true);
-        // Here you would typically send the access token to your backend
-        // const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        //   headers: { Authorization: `Bearer ${response.access_token}` },
-        // }).then(res => res.json());
-        console.log(response)
-        toast.success("Successfully logged in!");
-        navigate("/");
-      } catch (error) {
-        toast.error("Failed to login");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    onError: () => {
-      toast.error("Login failed");
-      setIsLoading(false);
+  const handleGoogleSuccess = async (credentialResponse: { credential: string }) => {
+    try {
+      const loginResponse = await authLogin({ token: credentialResponse.credential });
+      dispatch({
+        type: SET_USER_INFO,
+        payload: loginResponse
+      });
+      toast.success("Successfully logged in!");
+      navigate("/");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to login");
     }
-  });
-
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    login();
   };
 
   return (
@@ -63,18 +52,21 @@ const Login = () => {
               </p>
             </div>
 
-            <Button 
-              className="w-full py-6 text-base flex items-center justify-center gap-3"
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-            >
-              <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                <g transform="matrix(1, 0, 0, 1, 0, 0)">
-                  <path d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1Z" fill="currentColor"></path>
-                </g>
-              </svg>
-              {isLoading ? "Signing in..." : "Sign in with Google"}
-            </Button>
+            <div className="w-full flex justify-center google-btn-container" ref={googleLoginRef}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => toast.error("Login failed")}
+                theme="filled_black"
+                shape="rectangular"
+                text="signin_with"
+                locale="en"
+                type="standard"
+                context="signin"
+                ux_mode="popup"
+                auto_select={false}
+                itp_support={true}
+              />
+            </div>
 
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">

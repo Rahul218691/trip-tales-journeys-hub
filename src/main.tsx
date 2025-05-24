@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
+import { BrowserRouter } from 'react-router-dom'
 import { createRoot } from 'react-dom/client'
 import { Spinner } from './components/ui/spinner.tsx'
+import { AppProvider } from './context/AuthContext'
 import './index.css'
 
 const App = lazy(() => import('./App.tsx'))
@@ -11,6 +13,10 @@ createRoot(document.getElementById("root")!).render(
             <Spinner size="lg" />
         </div>
     }>
-        <App />
+    <BrowserRouter>
+        <AppProvider>
+            <App />
+        </AppProvider>
+    </BrowserRouter>
     </Suspense>
 );
