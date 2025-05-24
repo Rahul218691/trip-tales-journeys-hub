@@ -70,7 +70,7 @@ const App = () => {
                   <Route path="/trip/:id" element={<TripDetail />} />
                   <Route path="/create" element={<PrivateRoute><CreateStory /></PrivateRoute>} />
                   <Route path="/create-trip" element={<PrivateRoute><CreateTrip /></PrivateRoute>} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/profile/:id" element={<Profile />} />
                   <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
                   <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
                   <Route path="*" element={<NotFound />} />

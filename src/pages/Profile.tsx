@@ -1,26 +1,16 @@
-
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Calendar, Edit, Settings, MessageCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import ProfileUpdateModal from "@/components/ProfileUpdateModal";
+import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getProfile, updateProfile, UpdateProfileData } from "@/services/user";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Sample data for the profile page
-const userData = {
-  name: "Alex Johnson",
-  username: "traveler_alex",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80",
-  location: "San Francisco, CA",
-  bio: "Adventure seeker | Nature lover | Exploring one city at a time. I've visited over 30 countries and still counting!",
-  stats: {
-    trips: 24,
-    stories: 48,
-    followers: 1243,
-    following: 567
-  }
-};
 
 const userStories = [
   {
@@ -68,64 +58,150 @@ const userTrips = [
   }
 ];
 
+const ProfileSkeleton = () => (
+  <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+    <Skeleton className="w-32 h-32 rounded-full bg-gray-300" />
+    <div className="flex-1 space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48 bg-gray-300" />
+        <Skeleton className="h-4 w-32 bg-gray-300" />
+      </div>
+      <Skeleton className="h-4 w-full max-w-lg bg-gray-300" />
+      <div className="flex flex-wrap gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="h-8 w-12 bg-gray-300" />
+            <Skeleton className="h-4 w-16 bg-gray-300" />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const Profile = () => {
+  const { id } = useParams();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("stories");
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+
+  const handleFetchProfile = useCallback(async() => {
+    try {
+      return await getProfile(id)
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      throw error;
+    }
+  }, [id])
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['profile', id],
+    queryFn: handleFetchProfile,
+    enabled: !!id,
+    refetchOnWindowFocus: false
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (data: UpdateProfileData) => updateProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', id] });
+      toast.success("Profile updated successfully!");
+      setIsUpdateModalOpen(false);
+    },
+    onError: (error) => {
+      toast.error("Failed to update profile");
+      console.error("Error updating profile:", error);
+    }
+  });
+
+  const handleProfileUpdate = async (data: {
+    username: string;
+    email: string;
+    bio: string;
+    avatar?: File;
+  }) => {
+    const updateData: UpdateProfileData = {
+      username: data.username,
+      bio: data.bio,
+      profile: data.avatar
+    };
+    updateProfileMutation.mutate(updateData);
+  };
 
   return (
     <div className="container max-w-4xl py-8">
       <div className="space-y-8">
         {/* Profile Header */}
-        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-          <div className="relative">
-            <Avatar className="w-32 h-32 border-4 border-background">
-              <AvatarImage src={userData.avatar} alt={userData.name} />
-              <AvatarFallback className="text-4xl">{userData.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </div>
-          
-          <div className="flex-1 text-center md:text-left space-y-4">
-            <div>
-              <h1 className="text-3xl font-bold">{userData.name}</h1>
-              <p className="text-muted-foreground">@{userData.username}</p>
+        {((isLoading || isFetching) && !data) ? (
+          <ProfileSkeleton />
+        ) : (
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+            <div className="relative">
+              <Avatar className="w-32 h-32 border-4 border-background">
+                <AvatarImage src={data?.profileImg} alt={data?.username} />
+                <AvatarFallback className="text-4xl">{data?.username.charAt(0)}</AvatarFallback>
+              </Avatar>
             </div>
             
-            <div className="flex items-center justify-center md:justify-start gap-2 text-muted-foreground">
-              <MapPin size={16} />
-              <span>{userData.location}</span>
+            <div className="flex-1 text-center md:text-left space-y-4">
+              <div>
+                <h1 className="text-3xl font-bold">{data?.username}</h1>
+              </div>
+              
+              <p className="max-w-lg">{data?.bio}</p>
+              
+              <div className="flex flex-wrap justify-center md:justify-start gap-6">
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-sm text-muted-foreground">Trips</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-sm text-muted-foreground">Stories</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-sm text-muted-foreground">Followers</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-sm text-muted-foreground">Following</p>
+                </div>
+              </div>
             </div>
             
-            <p className="max-w-lg">{userData.bio}</p>
-            
-            <div className="flex flex-wrap justify-center md:justify-start gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{userData.stats.trips}</p>
-                <p className="text-sm text-muted-foreground">Trips</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{userData.stats.stories}</p>
-                <p className="text-sm text-muted-foreground">Stories</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{userData.stats.followers}</p>
-                <p className="text-sm text-muted-foreground">Followers</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-semibold">{userData.stats.following}</p>
-                <p className="text-sm text-muted-foreground">Following</p>
-              </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setIsUpdateModalOpen(true)}
+              >
+                <Edit size={16} />
+                <span>Edit</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <Settings size={16} />
+              </Button>
             </div>
           </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Edit size={16} />
-              <span>Edit</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Settings size={16} />
-            </Button>
-          </div>
-        </div>
+        )}
+
+        {/* Profile Update Modal */}
+        {
+          isUpdateModalOpen && data && <ProfileUpdateModal
+          isOpen={isUpdateModalOpen}
+          onClose={() => setIsUpdateModalOpen(false)}
+          currentUser={{
+            username: data?.username,
+            email: data.email, // TODO: Get from actual user data
+            bio: data?.bio,
+            avatar: data?.profileImg,
+          }}
+          isUpdating={updateProfileMutation.isPending}
+          onUpdate={handleProfileUpdate}
+        />
+        }
         
         {/* Tabs for Stories and Trips */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

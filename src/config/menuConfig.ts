@@ -60,12 +60,31 @@ const unauthenticatedItems: MenuItem[] = [
   },
 ];
 
+// export const getMenuItems = (user: any | null) => {
+//   const isAuthenticated = !!user;
+//   if (isAuthenticated) {
+
+//   }
+//   return isAuthenticated 
+//     ? [...baseMenuItems, ...authRequiredItems]
+//     : [...baseMenuItems, ...unauthenticatedItems];
+// };
+
 export const getMenuItems = (user: any | null) => {
   const isAuthenticated = !!user;
-  return isAuthenticated 
-    ? [...baseMenuItems, ...authRequiredItems]
-    : [...baseMenuItems, ...unauthenticatedItems];
-};
+
+  if (isAuthenticated) {
+    const authenticatedMenu = authRequiredItems.map(item =>
+      item.label === 'Profile' && user && user._id
+        ? { ...item, path: `/profile/${user._id}` } // Create a new object with updated path
+        : item // Return the original item
+    );
+
+    return [...baseMenuItems, ...authenticatedMenu];
+  } else {
+    return [...baseMenuItems, ...unauthenticatedItems];
+  }
+}
 
 // Helper functions to get specific menu sections
 export const getDesktopNavItems = (user: any | null) => 

@@ -5,6 +5,11 @@ export interface User {
   profileImg: string;
   profileImgSecureUrl: string;
   usertype: string;
+  totalStories?: number;
+  totalTrips?: number;
+  followers?: number;
+  following?: number;
+  bio?: string;
 }
 
 export interface LoginResponse {
