@@ -1,10 +1,9 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, MapPin, Play } from "lucide-react";
+import { Heart, MapPin, Play, Eye } from "lucide-react";
 import CommentSection from "@/components/CommentSection";
 import ImageViewer from "@/components/ImageViewer";
 
@@ -13,6 +12,7 @@ const story = {
   id: "1",
   title: "Island Paradise",
   location: "Bali, Indonesia",
+  views: 2458,
   images: [
     "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
     "https://images.unsplash.com/photo-1433086966358-54859d0ed716?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
@@ -69,11 +69,8 @@ const StoryDetail = () => {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [initialMediaIndex, setInitialMediaIndex] = useState(0);
   
-  // Create a combined media array for the viewer
-  const mediaItems = [
-    ...story.images.map(src => ({ type: "image", src } as const)),
-    ...story.videos.map(src => ({ type: "video", src } as const))
-  ];
+  // Create image items array for the viewer
+  const imageItems = story.images.map(src => ({ type: "image", src } as const));
   
   const toggleLike = () => {
     if (liked) {
@@ -89,17 +86,15 @@ const StoryDetail = () => {
     setViewerOpen(true);
   };
 
-  const openVideoViewer = (videoIndex: number) => {
-    // Offset by the number of images to get the correct index in the combined array
-    setInitialMediaIndex(story.images.length + videoIndex);
-    setViewerOpen(true);
-  };
+  const handleCloseModal = useCallback(() => {
+    setViewerOpen(false);
+  }, []);
 
   return (
     <div className="container py-8">
       <header className="mb-8">
         <h1 className="text-4xl font-bold mb-4 animate-fade-in">{story.title}</h1>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Avatar>
               <AvatarImage src={story.author.avatar} />
@@ -110,10 +105,14 @@ const StoryDetail = () => {
               <div className="text-sm text-muted-foreground">{story.datePosted}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1 text-muted-foreground">
               <MapPin size={18} />
               <span>{story.location}</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <Eye size={18} />
+              <span>{story.views.toLocaleString()} views</span>
             </div>
           </div>
         </div>
@@ -148,10 +147,10 @@ const StoryDetail = () => {
 
       {/* Media Viewer */}
       <ImageViewer 
-        mediaItems={mediaItems} 
+        mediaItems={imageItems} 
         initialIndex={initialMediaIndex}
         open={viewerOpen}
-        onOpenChange={setViewerOpen}
+        onOpenChange={handleCloseModal}
       />
 
       {story.videos && story.videos.length > 0 && (
@@ -161,19 +160,16 @@ const StoryDetail = () => {
             {story.videos.map((video, index) => (
               <div 
                 key={index} 
-                className="aspect-video relative rounded-lg overflow-hidden shadow-md cursor-pointer"
-                onClick={() => openVideoViewer(index)}
+                className="aspect-video relative rounded-lg overflow-hidden shadow-md"
               >
                 <video 
                   src={video} 
                   className="w-full h-full object-cover"
                   poster={story.images[0]}
+                  controls
                 >
                   Your browser does not support the video tag.
                 </video>
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center hover:bg-black/30 transition-colors">
-                  <Play size={64} className="text-white" />
-                </div>
               </div>
             ))}
           </div>
@@ -186,6 +182,65 @@ const StoryDetail = () => {
             className="prose max-w-none mb-10"
             dangerouslySetInnerHTML={{ __html: story.content }}
           />
+
+          {/* Tips Section */}
+          <div className="mb-10">
+            <h2 className="text-2xl font-semibold mb-4">Travel Tips</h2>
+            <div className="bg-muted/50 rounded-lg p-6">
+              <ul className="space-y-4">
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sunset/20 flex items-center justify-center">
+                    <span className="text-sunset font-medium">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Best Time to Visit</h3>
+                    <p className="text-muted-foreground">April to October offers the best weather with less rainfall and perfect conditions for beach activities.</p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sunset/20 flex items-center justify-center">
+                    <span className="text-sunset font-medium">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Local Transportation</h3>
+                    <p className="text-muted-foreground">Rent a scooter for the most flexible way to explore the island. Make sure to have an international driving permit.</p>
+                  </div>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-sunset/20 flex items-center justify-center">
+                    <span className="text-sunset font-medium">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium mb-1">Cultural Etiquette</h3>
+                    <p className="text-muted-foreground">Dress modestly when visiting temples and always ask permission before taking photos of locals.</p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Highlights Section */}
+          <div className="mb-10">
+            <h2 className="text-2xl font-semibold mb-4">Trip Highlights</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-muted/50 rounded-lg p-6">
+                {/* <h3 className="font-medium mb-2">Sacred Monkey Forest</h3> */}
+                <p className="text-muted-foreground">An enchanting forest sanctuary home to hundreds of playful monkeys and ancient temples.</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-6">
+                {/* <h3 className="font-medium mb-2">Uluwatu Beach</h3> */}
+                <p className="text-muted-foreground">Stunning cliff-top views and world-class surfing spots with perfect waves.</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-6">
+                {/* <h3 className="font-medium mb-2">Local Cooking Class</h3> */}
+                <p className="text-muted-foreground">Authentic Balinese cooking experience with fresh market ingredients and traditional recipes.</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-6">
+                {/* <h3 className="font-medium mb-2">Temple Visits</h3> */}
+                <p className="text-muted-foreground">Ancient temples nestled in lush forests, offering spiritual experiences and architectural wonders.</p>
+              </div>
+            </div>
+          </div>
 
           <div className="flex items-center gap-4 mb-8">
             <Button 

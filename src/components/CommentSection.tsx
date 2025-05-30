@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 
 interface Comment {
   id: string;
@@ -19,9 +18,13 @@ interface CommentSectionProps {
   comments: Comment[];
 }
 
+const COMMENTS_PER_PAGE = 1;
+
 const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState("");
+  const [displayedComments, setDisplayedComments] = useState<Comment[]>(initialComments.slice(0, COMMENTS_PER_PAGE));
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAddComment = () => {
     if (newComment.trim() === "") return;
@@ -37,8 +40,22 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
     };
 
     setComments([comment, ...comments]);
+    setDisplayedComments([comment, ...displayedComments]);
     setNewComment("");
   };
+
+  const handleLoadMore = () => {
+    setIsLoading(true);
+    // Simulate loading delay
+    setTimeout(() => {
+      const currentLength = displayedComments.length;
+      const nextComments = comments.slice(currentLength, currentLength + COMMENTS_PER_PAGE);
+      setDisplayedComments([...displayedComments, ...nextComments]);
+      setIsLoading(false);
+    }, 500);
+  };
+
+  const hasMoreComments = displayedComments.length < comments.length;
 
   return (
     <div className="space-y-6">
@@ -65,7 +82,7 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
       </div>
 
       <div className="space-y-4">
-        {comments.map((comment) => (
+        {displayedComments.map((comment) => (
           <div key={comment.id} className="flex gap-3">
             <Avatar>
               <AvatarImage src={comment.author.avatar} />
@@ -81,6 +98,26 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
           </div>
         ))}
       </div>
+
+      {hasMoreComments && (
+        <div className="flex justify-center">
+          <Button 
+            variant="outline" 
+            onClick={handleLoadMore} 
+            disabled={isLoading}
+            className="gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Load More'
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,13 +4,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useContext, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import useLoadingWithRefresh from "@/hooks/useLoadingWithRefresh";
+import { AuthContext } from "@/context/AuthContext";
+import { StoryAlert } from "@/components/ui/StoryAlert";
 
 import GuestRoute from "./routes/GuestRoute";
 import PrivateRoute from "./routes/PrivateRoute";
 import { LOCALSTORAGE_KEYS } from "./lib/constants";
+import { pusher } from './lib/utils'
 
 // Lazy load all route components
 const Index = lazy(() => import("./pages/Index"));
@@ -29,6 +32,38 @@ const App = () => {
   const queryClient = new QueryClient();
   const location = useLocation();
   const { loading } = useLoadingWithRefresh();
+
+  const { state: { user } } = useContext(AuthContext);
+
+  const [alertData, setAlertData] = useState<{ show: boolean; storyId: string; message: string }>({
+    show: false,
+    storyId: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      const channel = pusher.subscribe(`trip_tales_mystory_${user._id}`);
+
+      channel.bind('story_creation', function(data: any) {
+        console.log('Received story_creation event:', data);
+        
+        const storyId = data?.message?.storyId;
+
+        if (storyId) {
+          setAlertData({
+            show: true,
+            storyId,
+            message: data.message.text
+          });
+        }
+      });
+
+      return () => {
+        pusher.unsubscribe(`trip_tales_mystory_${user._id}`);
+      };
+    }
+  }, [user]);
 
   useEffect(() => {
     return () => {
@@ -57,6 +92,12 @@ const App = () => {
             <Suspense fallback={<div className="h-16 bg-background" />}>
               <NavbarComponent />
             </Suspense>
+            <StoryAlert 
+              show={alertData.show}
+              message={alertData.message}
+              storyId={alertData.storyId}
+              onClose={() => setAlertData(prev => ({ ...prev, show: false }))}
+            />
             <main className="flex-1">
               <Suspense fallback={
                 <div className="min-h-[calc(100vh-4rem)] w-full flex items-center justify-center">

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
@@ -19,6 +18,11 @@ interface ImageViewerProps {
 
 const ImageViewer = ({ mediaItems, initialIndex = 0, open, onOpenChange }: ImageViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  // Update currentIndex when initialIndex changes
+  React.useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
 
   const handleNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % mediaItems.length);
