@@ -91,3 +91,27 @@ export interface GetStoriesResponse {
   hasNextPage: boolean;
   hasPrevPage: boolean;
 }
+
+export interface GetCommentsParams {
+  page: number;
+  limit: number;
+  storyId: string;
+}
+
+export interface CommentsResponse {
+  _id: string;
+  content: string;
+  createdBy: {
+    username: string;
+    profileImg: string;
+    profileImgSecureUrl: string;
+  };
+  createdAt: string;
+}
+
+export interface GetCommentsResponse {
+  items: CommentsResponse[];
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}

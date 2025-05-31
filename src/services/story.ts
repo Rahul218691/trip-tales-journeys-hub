@@ -1,4 +1,4 @@
-import { CreateStoryData, GetStoriesParams, GetStoriesResponse } from "@/types/story";
+import { CreateStoryData, GetCommentsParams, GetCommentsResponse, GetStoriesParams, GetStoriesResponse, Story } from "@/types/story";
 import http from './api';
 import { AxiosHeaders } from 'axios';
 
@@ -78,4 +78,29 @@ export const createStory = async (data: CreateStoryData): Promise<string> => {
   });
 
   return response.message;
+};
+
+/**
+ * Get story details by ID
+ * @param storyId - The ID of the story whose details to fetch
+ * @returns Promise with the story data
+ */
+
+export const getStoryDetails = async (storyId: string): Promise<Story> => {
+  try {
+    const response = await http.get<Story>(`/api/story/${storyId}`);
+    return response;
+  } catch (error) {
+    console.error("Error fetching story:", error);
+    throw error;
+  }
+};
+
+
+export const getStoryComments = async (params: GetCommentsParams): Promise<GetCommentsResponse> => {
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', params.page.toString());
+  queryParams.append('limit', params.limit.toString());
+  const response = await http.get<GetCommentsResponse>(`/api/comments/${params.storyId}?${queryParams.toString()}`);
+  return response;
 };
