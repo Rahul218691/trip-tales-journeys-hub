@@ -1,10 +1,12 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search } from "lucide-react";
+import { TRIP_TYPES, TRANSPORTATION_TYPES } from "@/lib/constants";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -14,23 +16,38 @@ interface FilterModalProps {
 const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recent");
-  const [category, setCategory] = useState("all");
+  const [selectedTripTypes, setSelectedTripTypes] = useState<string[]>([]);
+  const [transportationType, setTransportationType] = useState("");
 
   const handleApplyFilters = () => {
     // Here you would implement the actual filtering logic
-    console.log("Applying filters:", { searchQuery, sortBy, category });
+    console.log("Applying filters:", { 
+      searchQuery, 
+      sortBy, 
+      tripTypes: selectedTripTypes,
+      transportationType 
+    });
     onClose();
   };
 
   const handleResetFilters = () => {
     setSearchQuery("");
     setSortBy("recent");
-    setCategory("all");
+    setSelectedTripTypes([]);
+    setTransportationType("");
+  };
+
+  const toggleTripType = (type: string) => {
+    setSelectedTripTypes(prev => 
+      prev.includes(type) 
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Filter Stories</DialogTitle>
         </DialogHeader>
@@ -72,31 +89,43 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
             </RadioGroup>
           </div>
 
-          {/* Categories */}
+          {/* Transportation Type */}
           <div className="space-y-2">
-            <h3 className="text-sm font-medium">Categories</h3>
-            <RadioGroup defaultValue="all" value={category} onValueChange={setCategory}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="all" />
-                <label htmlFor="all" className="text-sm">All</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="adventure" id="adventure" />
-                <label htmlFor="adventure" className="text-sm">Adventure</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="city" id="city" />
-                <label htmlFor="city" className="text-sm">City Breaks</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="beach" id="beach" />
-                <label htmlFor="beach" className="text-sm">Beach Holiday</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="nature" id="nature" />
-                <label htmlFor="nature" className="text-sm">Nature & Wildlife</label>
+            <h3 className="text-sm font-medium">Transportation Type</h3>
+            <RadioGroup value={transportationType} onValueChange={setTransportationType}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {TRANSPORTATION_TYPES.map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <RadioGroupItem value={type} id={type} />
+                    <label htmlFor={type} className="text-sm capitalize">{type}</label>
+                  </div>
+                ))}
               </div>
             </RadioGroup>
+          </div>
+
+          {/* Trip Types */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Trip Types</h3>
+            <ScrollArea className="h-[200px] rounded-md border p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {TRIP_TYPES.map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={type}
+                      checked={selectedTripTypes.includes(type)}
+                      onCheckedChange={() => toggleTripType(type)}
+                    />
+                    <label
+                      htmlFor={type}
+                      className="text-sm capitalize cursor-pointer"
+                    >
+                      {type.replace(/-/g, ' ')}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
 

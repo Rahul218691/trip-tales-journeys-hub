@@ -1,14 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from '@tanstack/react-query'
 import { Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import StoryCard from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
-import { Filter, ArrowRight } from "lucide-react";
+import { Filter } from "lucide-react";
 import FilterModal from "@/components/FilterModal";
 import Pagination from "@/components/Pagination";
+import { DEFAULT_LIST_SIZE } from '@/lib/constants'
+import { getStories } from "@/services/story";
+import StoriesSkeleton from "@/components/StoriesSkeleton";
 
 // Sample data for stories
-const popularStories = [
+const stories = [
   {
     id: "1",
     title: "Island Paradise",
@@ -44,10 +47,7 @@ const popularStories = [
     },
     likes: 65,
     comments: 8,
-  }
-];
-
-const recentStories = [
+  },
   {
     id: "4",
     title: "Coastal Road Trip",
@@ -88,16 +88,29 @@ const recentStories = [
 
 const Index = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("popular");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 6;
 
-  const storiesData = activeTab === "popular" ? popularStories : recentStories;
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    setCurrentPage(1); // Reset to first page when changing tabs
-  };
+  const handleFetchStories = useCallback(async(currentPage: number) => {
+    try {
+      const payload = {
+        page: currentPage,
+        limit: DEFAULT_LIST_SIZE
+      }
+      return await getStories(payload)
+    } catch (error) {
+      console.error("Error fetching stories:", error);
+      throw error;
+    }
+  }, [])
+
+  const { data, isLoading, isFetching, isError, error } = useQuery({
+    queryKey: ['stories_list', currentPage],
+    queryFn: () => handleFetchStories(currentPage),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 3 * 60 * 1000
+  })
   
   return (
     <div className="container py-8">
@@ -145,42 +158,52 @@ const Index = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="popular" className="w-full" onValueChange={handleTabChange}>
-          <TabsList>
-            <TabsTrigger value="popular">Popular</TabsTrigger>
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-          </TabsList>
-          <TabsContent value="popular" className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularStories.map(story => (
-                <StoryCard key={story.id} {...story} />
-              ))}
+        {isLoading || isFetching ? (
+          <StoriesSkeleton />
+        ) : data?.items?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div className="w-24 h-24 mb-6 text-muted-foreground/20">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
             </div>
-            <div className="mt-8">
-              <Pagination
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                hasNextPage={false}
-                hasPrevPage={false}
+            <h3 className="text-xl font-semibold mb-2">No Stories Found</h3>
+            <p className="text-muted-foreground max-w-md mb-6">
+              There are no travel stories to display at the moment. Be the first to share your journey!
+            </p>
+            <Link to="/create">
+              <Button size="lg" className="rounded-full">
+                Share Your Story
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data?.items?.map(story => (
+              <StoryCard
+                key={story._id}
+                id={story._id}
+                title={story.title}
+                location={story.location}
+                image={story.coverImage?.secureUrl || story.coverImage?.url || ''}
+                author={{
+                  name: story.createdBy?.username || '',
+                  avatar: story.createdBy?.profileImgSecureUrl || story.createdBy?.profileImg || ''
+                }}
+                likes={story.likes}
+                comments={story.totalComments}
               />
-            </div>
-          </TabsContent>
-          <TabsContent value="recent" className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentStories.map(story => (
-                <StoryCard key={story.id} {...story} />
-              ))}
-            </div>
-            <div className="mt-8">
-              <Pagination
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                hasNextPage={false}
-                hasPrevPage={false}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
+            ))}
+          </div>
+        )}
+        <div className="mt-8">
+          <Pagination
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            hasNextPage={data?.hasNextPage}
+            hasPrevPage={data?.hasPrevPage}
+          />
+        </div>
       </section>
       
       {/* CTA section */}

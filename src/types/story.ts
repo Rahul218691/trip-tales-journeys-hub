@@ -1,22 +1,36 @@
 export interface Story {
-  id: string;
+  _id: string;
   title: string;
   location: string;
-  locationMapUrl?: string;
-  budget: string;
+  locationMapLink?: string | null;
+  budget: number;
   travelDate: Date;
   tripType: string;
-  isPublic: boolean;
+  storyType: string;
   content: string;
-  coverImage: string;
-  images: string[];
-  videos: string[];
+  coverImage: {
+    url: string;
+    secureUrl: string;
+  }
+  storyImages: {
+    url: string;
+    secureUrl: string;
+  }[];
+  storyVideos: {
+    url: string;
+    secureUrl: string;
+  }[];
   highlights: string[];
   tips: string[];
   createdAt: Date;
-  updatedAt: Date;
-  authorId: string;
   transportation: string;
+  likes: number;
+  views: number;
+  storyReadTime: string;
+  createdBy: {
+    username: string;
+    profileImg: string;
+  };
 }
 
 export interface CreateStoryData {
@@ -38,4 +52,42 @@ export interface CreateStoryData {
 
 export interface CreateStoryResponse {
   message: string;
+}
+
+export interface GetStoriesParams {
+  page: number;
+  limit: number;
+  search?: string;
+  tripType?: string[];
+  transportation?: string;
+  sortBy?: 'recent' | 'popular' | 'commented';
+  isMyStories?: boolean;
+  userId?: string;
+}
+
+export interface StoryResponse {
+  _id: string;
+  title: string;
+  coverImage: {
+    url: string;
+    secureUrl: string;
+  };
+  location: string;
+  storyReadTime: string;
+  likes: number;
+  views: number;
+  totalComments: number;
+  createdBy: {
+    username: string;
+    profileImg: string;
+    profileImgSecureUrl: string;
+  };
+  createdAt: string;
+}
+
+export interface GetStoriesResponse {
+  items: StoryResponse[];
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }

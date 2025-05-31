@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react";
+import { useContext, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -6,13 +6,16 @@ import { GoogleLogin } from "@react-oauth/google";
 import { AuthContext } from "@/context/AuthContext";
 import { login as authLogin } from "@/services/auth";
 import { SET_USER_INFO } from "@/lib/constants";
+import { Spinner } from "@/components/ui/spinner";
 
 const Login = () => {
   const { dispatch } = useContext(AuthContext);
   const navigate = useNavigate();
   const googleLoginRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSuccess = async (credentialResponse: { credential: string }) => {
+    setIsLoading(true);
     try {
       const loginResponse = await authLogin({ token: credentialResponse.credential });
       dispatch({
@@ -23,11 +26,21 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to login");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Spinner size="lg" />
+            <p className="text-muted-foreground animate-pulse">Signing you in...</p>
+          </div>
+        </div>
+      )}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

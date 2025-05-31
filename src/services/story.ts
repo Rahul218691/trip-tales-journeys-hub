@@ -1,6 +1,38 @@
-import { CreateStoryData } from "@/types/story";
+import { CreateStoryData, GetStoriesParams, GetStoriesResponse } from "@/types/story";
 import http from './api';
 import { AxiosHeaders } from 'axios';
+
+
+export const getStories = async (params: GetStoriesParams): Promise<GetStoriesResponse> => {
+  const queryParams = new URLSearchParams();
+
+  // Required params
+  queryParams.append('page', params.page.toString());
+  queryParams.append('limit', params.limit.toString());
+
+  // Optional params
+  if (params.search) {
+    queryParams.append('search', params.search);
+  }
+  if (params.tripType && params.tripType.length > 0) {
+    params.tripType.forEach(type => queryParams.append('tripType', type));
+  }
+  if (params.transportation) {
+    queryParams.append('transportation', params.transportation);
+  }
+  if (params.sortBy) {
+    queryParams.append('sortBy', params.sortBy);
+  }
+  if (params.isMyStories) {
+    queryParams.append('isMyStories', 'true');
+  }
+  if (params.userId) {
+    queryParams.append('userId', params.userId);
+  }
+
+  const response = await http.get<GetStoriesResponse>(`/api/stories?${queryParams.toString()}`);
+  return response;
+};
 
 export const createStory = async (data: CreateStoryData): Promise<string> => {
   const formData = new FormData();

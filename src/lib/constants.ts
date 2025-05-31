@@ -59,3 +59,5 @@ export const TRIP_TYPES = [
 ]
 
 export const TRANSPORTATION_TYPES = ['car', 'bus', 'train', 'flight', 'boat', 'bicycle', 'walking', 'other']
+
+export const DEFAULT_LIST_SIZE = 10

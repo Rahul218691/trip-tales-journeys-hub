@@ -36,6 +36,7 @@ const CreateStory = () => {
   const [locationMapUrl, setLocationMapUrl] = useState("");
   const [budget, setBudget] = useState("");
   const [date, setDate] = useState<Date>();
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [tripType, setTripType] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [content, setContent] = useState("");
@@ -271,7 +272,7 @@ const CreateStory = () => {
 
             <div>
               <Label>Travel Date</Label>
-              <Popover>
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -288,7 +289,10 @@ const CreateStory = () => {
                   <Calendar
                     mode="single"
                     selected={date}
-                    onSelect={setDate}
+                    onSelect={(newDate) => {
+                      setDate(newDate);
+                      setDatePickerOpen(false);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
