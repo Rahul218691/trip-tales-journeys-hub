@@ -27,7 +27,9 @@ export interface Story {
   likes: number;
   views: number;
   storyReadTime: string;
+  hasLiked?: boolean;
   createdBy: {
+    _id: string;
     username: string;
     profileImg: string;
   };
@@ -75,9 +77,11 @@ export interface StoryResponse {
   location: string;
   storyReadTime: string;
   likes: number;
+  hasLiked?: boolean;
   views: number;
   totalComments: number;
   createdBy: {
+    _id: string;
     username: string;
     profileImg: string;
     profileImgSecureUrl: string;
@@ -102,6 +106,7 @@ export interface CommentsResponse {
   _id: string;
   content: string;
   createdBy: {
+    _id: string;
     username: string;
     profileImg: string;
     profileImgSecureUrl: string;
@@ -114,4 +119,16 @@ export interface GetCommentsResponse {
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+
+export interface AddCommentData {
+  content: string;
+  storyId: string
+}
+
+export interface AddCommentDataResponse {
+  _id: string,
+  content: string,
+  createdAt: Date
 }

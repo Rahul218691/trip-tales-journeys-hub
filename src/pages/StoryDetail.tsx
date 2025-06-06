@@ -1,19 +1,20 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { format } from "date-fns";
-import { Heart, MessageCircle, Share2, Eye } from "lucide-react";
+import { Heart, Share2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { getStoryDetails, getStoryComments } from "@/services/story";
+import { getStoryDetails, updateStoryViewCount } from "@/services/story";
 import { AuthContext } from "@/context/AuthContext";
 import ImageViewer from "@/components/ImageViewer";
 import StoryDetailSkeleton from "@/components/StoryDetailSkeleton";
 import { pusher } from "@/lib/utils";
-import { Story, GetCommentsResponse } from "@/types/story";
+import { Story } from "@/types/story";
+import CommentSection from "@/components/CommentSection";
 
 const StoryDetail = () => {
   const { id } = useParams();
@@ -36,17 +37,17 @@ const StoryDetail = () => {
     enabled: !!id
   });
 
-  // Fetch story comments
-  const { 
-    data: comments, 
-    isLoading: isLoadingComments,
-    isFetching: isFetchingComments,
-    error: commentsError 
-  } = useQuery<GetCommentsResponse>({
-    queryKey: ['story-comments', id],
-    queryFn: () => getStoryComments({ storyId: id as string, page: 1, limit: 10 }),
-    enabled: !!id
-  });
+
+  const updateViewCountMutation = useMutation({
+    mutationKey: ['update-story-view-count'],
+    mutationFn: (storyId: string) => updateStoryViewCount(storyId)
+  })
+
+  useEffect(() => {
+    if (id) {
+      updateViewCountMutation.mutate(id);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (story?.likes && user?._id) {
@@ -76,6 +77,15 @@ const StoryDetail = () => {
       toast({
         title: "Authentication Required",
         description: "Please sign in to like stories",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (user && story.createdBy?._id === user._id) {
+      toast({
+        title: "You can't like your own story",
+        description: "You can only like stories created by other users",
         variant: "destructive"
       });
       return;
@@ -111,16 +121,16 @@ const StoryDetail = () => {
     setShowImageViewer(true);
   };
 
-  if (isLoadingStory || isLoadingComments || isFetchingStory || isFetchingComments) {
+  if (isLoadingStory || isFetchingStory) {
     return <StoryDetailSkeleton />;
   }
 
-  if (storyError || commentsError) {
+  if (storyError) {
     return (
       <div className="container py-8 text-center">
         <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Story</h2>
         <p className="text-muted-foreground mb-6">
-          {storyError ? 'Failed to load story details' : 'Failed to load comments'}
+          Failed to load story details
         </p>
         <Button onClick={() => navigate(-1)}>Go Back</Button>
       </div>
@@ -198,9 +208,6 @@ const StoryDetail = () => {
         </div>
       )}
 
-      {/* Story content */}
-      <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: story.content }} />
-      
       {/* Story actions */}
       <div className="flex items-center gap-4 mb-8">
         <Button
@@ -212,14 +219,7 @@ const StoryDetail = () => {
           <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
           <span>{story.likes}</span>
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <MessageCircle className="h-5 w-5" />
-          <span>{comments?.items?.length || 0}</span>
-        </Button>
+      
         <Button
           variant="ghost"
           size="sm"
@@ -231,29 +231,13 @@ const StoryDetail = () => {
         </Button>
       </div>
 
+      {/* Story content */}
+      <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: story.content }} />
+      
       <Separator className="my-8" />
 
       {/* Comments section */}
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Comments</h2>
-        {comments?.items?.map((comment) => (
-          <div key={comment._id} className="flex gap-4">
-            <Avatar>
-              <AvatarImage src={comment.createdBy?.profileImg} />
-              <AvatarFallback>{comment.createdBy?.username?.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium">{comment.createdBy?.username}</span>
-                <span className="text-sm text-muted-foreground">
-                  {format(new Date(comment.createdAt), 'MMM d, yyyy')}
-                </span>
-              </div>
-              <p className="text-muted-foreground">{comment.content}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <CommentSection storyId={id as string} />
 
       {/* Image viewer modal */}
       {showImageViewer && selectedImage && (

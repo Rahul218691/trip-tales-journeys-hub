@@ -1,4 +1,4 @@
-import { CreateStoryData, GetCommentsParams, GetCommentsResponse, GetStoriesParams, GetStoriesResponse, Story } from "@/types/story";
+import { CreateStoryData, GetCommentsParams, GetCommentsResponse, GetStoriesParams, GetStoriesResponse, Story, AddCommentData } from "@/types/story";
 import http from './api';
 import { AxiosHeaders } from 'axios';
 
@@ -104,3 +104,31 @@ export const getStoryComments = async (params: GetCommentsParams): Promise<GetCo
   const response = await http.get<GetCommentsResponse>(`/api/comments/${params.storyId}?${queryParams.toString()}`);
   return response;
 };
+
+export const updateStoryViewCount = async (storyId: string): Promise<void> => {
+  try {
+    await http.patch(`/api/story/view/${storyId}`);
+  } catch (error) {
+    console.error("Error updating story view count:", error);
+    throw error;
+  }
+};
+
+export const likeUnlikeStory = async (storyId: string): Promise<void> => {
+  try {
+    await http.patch(`/api/story/like/${storyId}`);
+  } catch (error) {
+    console.error("Error updating story view count:", error);
+    throw error;
+  }
+}
+
+export const addComment = async(data: AddCommentData): Promise<AddCommentDataResponse> => {
+  try {
+    const response = await http.post<AddCommentDataResponse>(`/api/create/comment`, data)
+    return response
+  } catch (error) {
+    console.error("Error adding story comment:", error);
+    throw error;
+  }
+}

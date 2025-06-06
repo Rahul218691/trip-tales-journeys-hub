@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { ImageIcon, MapPin, Send, Video, Plus, X, Star, Lightbulb } from "lucide
 import { Switch } from "@/components/ui/switch";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createStory } from "@/services/story";
 import {
   Popover,
@@ -27,10 +27,29 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { TRANSPORTATION_TYPES, TRIP_TYPES } from "@/lib/constants";
+import RichTextEditor from '@/components/RichTextEditor';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
+const storySchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+  location: z.string().min(1, 'Location is required'),
+  coverImage: z.string().optional(),
+  storyImages: z.array(z.string()).optional(),
+  tripType: z.string().min(1, 'Trip type is required'),
+  transportation: z.string().min(1, 'Transportation type is required'),
+  date: z.date({
+    required_error: "Travel date is required",
+  }),
+});
+
+type StoryFormData = z.infer<typeof storySchema>;
 
 const CreateStory = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [locationMapUrl, setLocationMapUrl] = useState("");
@@ -53,20 +72,52 @@ const CreateStory = () => {
   const [tips, setTips] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState("");
   const [newTip, setNewTip] = useState("");
-  const [transportation, setTransportation] = useState("")
+  const [transportation, setTransportation] = useState("");
   const coverImageInputRef = useRef<HTMLInputElement>(null);
   const storyImageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<StoryFormData>({
+    resolver: zodResolver(storySchema),
+    defaultValues: {
+      title: '',
+      content: '',
+      location: '',
+      tripType: '',
+      transportation: '',
+    }
+  });
+
+  // Watch form values
+  const formValues = watch();
+
+  // Update form values when state changes
+  useEffect(() => {
+    setValue('content', content);
+    setValue('tripType', tripType);
+    setValue('transportation', transportation);
+    if (date) {
+      setValue('date', date);
+    }
+  }, [content, tripType, transportation, date, setValue]);
+
   const createStoryMutation = useMutation({
     mutationFn: createStory,
-    onSuccess: (message) => {
-      toast.success(message);
-      navigate("/");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stories'] });
+      toast.success('Story created successfully!');
+      navigate('/');
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Failed to create story");
-    }
+      toast.error('Failed to create story');
+      console.error('Error creating story:', error);
+    },
   });
 
   const handleCoverImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,44 +210,37 @@ const CreateStory = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!title || !location || !content || coverImage.length === 0 || (images.length === 0 && videos.length === 0)) {
-      toast.error("Please fill in all required fields and add at least one image or video");
-      return;
-    }
-
+  const onSubmit = (data: StoryFormData) => {
     if (!date) {
       toast.error("Please select a travel date");
       return;
     }
 
-    if (!tripType) {
-      toast.error("Please select a trip type");
+    if (coverImage.length === 0) {
+      toast.error("Please add a cover image");
       return;
     }
 
-    if (!transportation) {
-      toast.error("Please select a transportation type");
+    if (images.length === 0 && videos.length === 0) {
+      toast.error("Please add at least one image or video");
       return;
     }
-    
+
     const storyData = {
-      title,
-      location,
+      title: data.title,
+      content: data.content,
+      location: data.location,
       locationMapUrl,
       budget,
       travelDate: date,
-      tripType,
+      tripType: data.tripType,
+      transportation: data.transportation,
       isPublic,
-      content,
       coverImage: coverImage[0],
       images,
       videos,
       highlights,
       tips,
-      transportation
     };
 
     createStoryMutation.mutate(storyData);
@@ -209,7 +253,7 @@ const CreateStory = () => {
         Inspire others with your travel experiences and memories.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Story Visibility */}
         <div className="flex items-center justify-between p-4 border rounded-lg">
           <div className="space-y-0.5">
@@ -230,9 +274,11 @@ const CreateStory = () => {
             <Input
               id="title"
               placeholder="Give your story a catchy title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              {...register('title')}
             />
+            {errors.title && (
+              <p className="text-sm text-red-500">{errors.title.message}</p>
+            )}
           </div>
           
           <div>
@@ -242,11 +288,13 @@ const CreateStory = () => {
               <Input
                 id="location"
                 placeholder="Where did this adventure take place?"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
                 className="pl-10"
+                {...register('location')}
               />
             </div>
+            {errors.location && (
+              <p className="text-sm text-red-500">{errors.location.message}</p>
+            )}
           </div>
 
           <div>
@@ -376,72 +424,8 @@ const CreateStory = () => {
           </div>
         </div>
 
-        {/* Highlights */}
-        <div className="space-y-4">
-          <Label>Highlights</Label>
-          <div className="space-y-4">
-            {highlights.map((highlight, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                <Star className="h-5 w-5 text-yellow-500" />
-                <span className="flex-1">{highlight}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveHighlight(index)}
-                >
-                  <X size={16} />
-                </Button>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add a highlight..."
-                value={newHighlight}
-                onChange={(e) => setNewHighlight(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddHighlight())}
-              />
-              <Button type="button" onClick={handleAddHighlight}>
-                <Plus size={16} />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Tips */}
-        <div className="space-y-4">
-          <Label>Tips</Label>
-          <div className="space-y-4">
-            {tips.map((tip, index) => (
-              <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                <Lightbulb className="h-5 w-5 text-blue-500" />
-                <span className="flex-1">{tip}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveTip(index)}
-                >
-                  <X size={16} />
-                </Button>
-              </div>
-            ))}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add a tip..."
-                value={newTip}
-                onChange={(e) => setNewTip(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTip())}
-              />
-              <Button type="button" onClick={handleAddTip}>
-                <Plus size={16} />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Photos */}
-        <div className="space-y-4">
+                {/* Photos */}
+                <div className="space-y-4">
           <Label>Photos</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {previewImages.map((image, index) => (
@@ -524,24 +508,89 @@ const CreateStory = () => {
           </div>
         </div>
 
+        {/* Highlights */}
+        <div className="space-y-4">
+          <Label>Highlights</Label>
+          <div className="space-y-4">
+            {highlights.map((highlight, index) => (
+              <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
+                <Star className="h-5 w-5 text-yellow-500" />
+                <span className="flex-1">{highlight}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveHighlight(index)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add a highlight..."
+                value={newHighlight}
+                onChange={(e) => setNewHighlight(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddHighlight())}
+              />
+              <Button type="button" onClick={handleAddHighlight}>
+                <Plus size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tips */}
+        <div className="space-y-4">
+          <Label>Tips</Label>
+          <div className="space-y-4">
+            {tips.map((tip, index) => (
+              <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
+                <Lightbulb className="h-5 w-5 text-blue-500" />
+                <span className="flex-1">{tip}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveTip(index)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add a tip..."
+                value={newTip}
+                onChange={(e) => setNewTip(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTip())}
+              />
+              <Button type="button" onClick={handleAddTip}>
+                <Plus size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <Label htmlFor="content">Story</Label>
-          <Textarea
-            id="content"
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
             placeholder="Share the details of your journey..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[200px]"
           />
+          {errors.content && (
+            <p className="text-sm text-red-500">{errors.content.message}</p>
+          )}
         </div>
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button type="submit" className="gap-2">
+          <Button type="submit" className="gap-2" disabled={createStoryMutation.isPending}>
             <Send size={16} />
-            Publish Story
+            {createStoryMutation.isPending ? 'Creating...' : 'Publish Story'}
           </Button>
         </div>
       </form>

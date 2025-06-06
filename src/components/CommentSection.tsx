@@ -1,61 +1,79 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AuthContext } from "@/context/AuthContext";
 import { Send, Loader2 } from "lucide-react";
-
-interface Comment {
-  id: string;
-  author: {
-    name: string;
-    avatar: string;
-  };
-  content: string;
-  timestamp: string;
-}
+import { getStoryComments, addComment } from "@/services/story";
 
 interface CommentSectionProps {
-  comments: Comment[];
+  storyId: string;
 }
 
-const COMMENTS_PER_PAGE = 1;
+const COMMENTS_PER_PAGE = 10;
 
-const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
-  const [comments, setComments] = useState<Comment[]>(initialComments);
+const CommentSection = ({ storyId }: CommentSectionProps) => {
+  const { state: { user } } = useContext(AuthContext)
+  const queryClient = useQueryClient()
   const [newComment, setNewComment] = useState("");
-  const [displayedComments, setDisplayedComments] = useState<Comment[]>(initialComments.slice(0, COMMENTS_PER_PAGE));
-  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
+    queryKey: ["comments", storyId],
+    queryFn: ({ pageParam = 1 }) => getStoryComments({ 
+      storyId, 
+      page: pageParam, 
+      limit: COMMENTS_PER_PAGE 
+    }),
+    getNextPageParam: (lastPage, allPages) => 
+      lastPage.hasNextPage ? allPages.length + 1 : undefined,
+    initialPageParam: 1
+  });
+
+  const comments = data?.pages.flatMap(page => page.items) || [];
+
+  const addCommentToStoryMutation = useMutation({
+    mutationFn: addComment,
+    onSuccess: (response) => {
+      const data = {
+        ...response,
+        createdBy: {
+          _id: user._id,
+          username: user.username,
+          profileImg: user.profileImg,
+          profileImgSecureUrl: user.profileImgSecureUrl
+        }
+      }
+      queryClient.setQueryData(["comments", storyId], (old: any) => {
+        if (!old) return { pages: [{ items: [data], hasNextPage: false, currentPage: 1 }] };
+        const newPages = [...old.pages];
+        newPages[0] = {
+          ...newPages[0],
+          items: [data, ...newPages[0].items].slice(0, COMMENTS_PER_PAGE)
+        };
+        return { ...old, pages: newPages };
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", storyId] });
+    }
+  })
 
   const handleAddComment = () => {
     if (newComment.trim() === "") return;
-
-    const comment: Comment = {
-      id: Date.now().toString(),
-      author: {
-        name: "Current User",
-        avatar: "",
-      },
-      content: newComment,
-      timestamp: "Just now",
-    };
-
-    setComments([comment, ...comments]);
-    setDisplayedComments([comment, ...displayedComments]);
+    addCommentToStoryMutation.mutate({
+      content: newComment.trim(),
+      storyId
+    })
     setNewComment("");
   };
-
-  const handleLoadMore = () => {
-    setIsLoading(true);
-    // Simulate loading delay
-    setTimeout(() => {
-      const currentLength = displayedComments.length;
-      const nextComments = comments.slice(currentLength, currentLength + COMMENTS_PER_PAGE);
-      setDisplayedComments([...displayedComments, ...nextComments]);
-      setIsLoading(false);
-    }, 500);
-  };
-
-  const hasMoreComments = displayedComments.length < comments.length;
 
   return (
     <div className="space-y-6">
@@ -73,7 +91,7 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
             className="resize-none"
           />
           <div className="flex justify-end mt-2">
-            <Button onClick={handleAddComment} disabled={!newComment.trim()} size="sm" className="gap-2">
+            <Button onClick={handleAddComment} disabled={!newComment.trim() || addCommentToStoryMutation.isPending} size="sm" className="gap-2">
               <Send size={16} />
               Post
             </Button>
@@ -82,16 +100,16 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
       </div>
 
       <div className="space-y-4">
-        {displayedComments.map((comment) => (
-          <div key={comment.id} className="flex gap-3">
+        {comments.map((comment) => (
+          <div key={comment._id} className="flex gap-3">
             <Avatar>
-              <AvatarImage src={comment.author.avatar} />
-              <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+              <AvatarImage src={comment.createdBy.profileImg} />
+              <AvatarFallback>{comment.createdBy.username[0]}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h4 className="font-medium">{comment.author.name}</h4>
-                <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                <h4 className="font-medium">{comment.createdBy.username}</h4>
+                <span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
               </div>
               <p className="mt-1 text-sm">{comment.content}</p>
             </div>
@@ -99,15 +117,15 @@ const CommentSection = ({ comments: initialComments }: CommentSectionProps) => {
         ))}
       </div>
 
-      {hasMoreComments && (
+      {hasNextPage && (
         <div className="flex justify-center">
           <Button 
             variant="outline" 
-            onClick={handleLoadMore} 
-            disabled={isLoading}
+            onClick={() => fetchNextPage()} 
+            disabled={isLoading || isFetchingNextPage}
             className="gap-2"
           >
-            {isLoading ? (
+            {isLoading || isFetchingNextPage ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading...

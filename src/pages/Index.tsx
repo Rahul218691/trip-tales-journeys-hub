@@ -158,7 +158,7 @@ const Index = () => {
           </Button>
         </div>
 
-        {isLoading || isFetching ? (
+        {isLoading ? (
           <StoriesSkeleton />
         ) : data?.items?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
