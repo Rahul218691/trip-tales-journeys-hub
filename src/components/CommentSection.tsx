@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AuthContext } from "@/context/AuthContext";
 import { Send, Loader2, Trash2 } from "lucide-react";
 import { getStoryComments, addComment, deleteComment } from "@/services/story";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CommentSectionProps {
   storyId: string;
@@ -16,6 +17,8 @@ const COMMENTS_PER_PAGE = 10;
 const CommentSection = ({ storyId }: CommentSectionProps) => {
   const { state: { user } } = useContext(AuthContext)
   const queryClient = useQueryClient()
+  const { toast } = useToast();
+
   const [newComment, setNewComment] = useState("");
 
   const {
@@ -75,6 +78,14 @@ const CommentSection = ({ storyId }: CommentSectionProps) => {
 
   const handleAddComment = () => {
     if (newComment.trim() === "") return;
+    if (!user) {
+      toast({
+        title: "Please login to add a comment",
+        description: "You need to be logged in to add a comment",
+        variant: "destructive"
+      });
+      return;
+    }
     addCommentToStoryMutation.mutate({
       content: newComment.trim(),
       storyId

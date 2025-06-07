@@ -81,14 +81,14 @@ const Login = () => {
               />
             </div>
 
-            <div className="mt-6 text-center text-sm">
+            {/* <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Don't have an account?{" "}
                 <Link to="/login" className="text-primary hover:underline">
                   Create an account
                 </Link>
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 

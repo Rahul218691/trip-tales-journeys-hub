@@ -1,14 +1,14 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from "date-fns";
-import { Heart, Share2, Eye } from "lucide-react";
+import { Heart, Share2, Eye, Star, Lightbulb, MapPin, Clock, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
-import { getStoryDetails, updateStoryViewCount } from "@/services/story";
+import { getStoryDetails, updateStoryViewCount, likeUnlikeStory } from "@/services/story";
 import { AuthContext } from "@/context/AuthContext";
 import ImageViewer from "@/components/ImageViewer";
 import StoryDetailSkeleton from "@/components/StoryDetailSkeleton";
@@ -24,6 +24,7 @@ const StoryDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Fetch story details
   const { 
@@ -37,7 +38,6 @@ const StoryDetail = () => {
     enabled: !!id
   });
 
-
   const updateViewCountMutation = useMutation({
     mutationKey: ['update-story-view-count'],
     mutationFn: (storyId: string) => updateStoryViewCount(storyId)
@@ -50,10 +50,10 @@ const StoryDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (story?.likes && user?._id) {
-      setIsLiked(story.likes > 0);
+    if (story?.hasLiked !== undefined) {
+      setIsLiked(story.hasLiked);
     }
-  }, [story, user]);
+  }, [story?.hasLiked]);
 
   useEffect(() => {
     if (!id) return;
@@ -71,6 +71,18 @@ const StoryDetail = () => {
       pusher.unsubscribe(`story-${id}`);
     };
   }, [id, toast]);
+
+  const likeUnlikeMutation = useMutation({
+    mutationFn: (storyId: string) => likeUnlikeStory(storyId),
+    onSuccess: () => {
+      setIsLiked(!isLiked);
+      queryClient.setQueryData(['story', id], (old: any) => ({
+        ...old,
+        likes: isLiked ? old.likes - 1 : old.likes + 1,
+        hasLiked: !isLiked
+      }));
+    }
+  });
 
   const handleLike = async () => {
     if (!user) {
@@ -92,8 +104,7 @@ const StoryDetail = () => {
     }
 
     try {
-      // TODO: Implement like functionality
-      setIsLiked(!isLiked);
+      await likeUnlikeMutation.mutateAsync(id as string);
     } catch (error) {
       console.error('Error liking story:', error);
       toast({
@@ -233,6 +244,57 @@ const StoryDetail = () => {
 
       {/* Story content */}
       <div className="prose prose-lg max-w-none mb-8" dangerouslySetInnerHTML={{ __html: story.content }} />
+      
+      {/* Highlights and Tips Section */}
+      {(story.highlights?.length > 0 || story.tips?.length > 0) && (
+        <div className="bg-muted/50 rounded-lg p-6 mb-8">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Highlights */}
+            {story.highlights?.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                  <h3>Highlights</h3>
+                </div>
+                <ul className="space-y-3">
+                  {story.highlights.map((highlight, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>{highlight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Tips */}
+            {story.tips?.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-lg font-semibold">
+                  <Lightbulb className="h-5 w-5 text-yellow-500" />
+                  <h3>Travel Tips</h3>
+                </div>
+                <ul className="space-y-3">
+                  {story.tips.map((tip, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {tip.toLowerCase().includes('time') ? (
+                          <Clock className="h-5 w-5 text-blue-500" />
+                        ) : tip.toLowerCase().includes('cost') || tip.toLowerCase().includes('price') ? (
+                          <DollarSign className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lightbulb className="h-5 w-5 text-yellow-500" />
+                        )}
+                      </div>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       <Separator className="my-8" />
 
