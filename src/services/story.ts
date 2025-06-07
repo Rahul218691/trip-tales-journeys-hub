@@ -1,4 +1,4 @@
-import { CreateStoryData, GetCommentsParams, GetCommentsResponse, GetStoriesParams, GetStoriesResponse, Story, AddCommentData } from "@/types/story";
+import { CreateStoryData, GetCommentsParams, GetCommentsResponse, GetStoriesParams, GetStoriesResponse, Story, AddCommentData, AddCommentDataResponse } from "@/types/story";
 import http from './api';
 import { AxiosHeaders } from 'axios';
 
@@ -129,6 +129,15 @@ export const addComment = async(data: AddCommentData): Promise<AddCommentDataRes
     return response
   } catch (error) {
     console.error("Error adding story comment:", error);
+    throw error;
+  }
+}
+
+export const deleteComment = async(storyId: string, commentId: string): Promise<void> => {
+  try {
+    await http.delete(`/api/delete/comment/${storyId}/${commentId}`);
+  } catch (error) {
+    console.error("Error deleting comment:", error);
     throw error;
   }
 }

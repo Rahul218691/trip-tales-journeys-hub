@@ -4,8 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AuthContext } from "@/context/AuthContext";
-import { Send, Loader2 } from "lucide-react";
-import { getStoryComments, addComment } from "@/services/story";
+import { Send, Loader2, Trash2 } from "lucide-react";
+import { getStoryComments, addComment, deleteComment } from "@/services/story";
 
 interface CommentSectionProps {
   storyId: string;
@@ -66,6 +66,13 @@ const CommentSection = ({ storyId }: CommentSectionProps) => {
     }
   })
 
+  const deleteCommentMutation = useMutation({
+    mutationFn: ({ storyId, commentId }: { storyId: string, commentId: string }) => deleteComment(storyId, commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", storyId] });
+    }
+  });
+
   const handleAddComment = () => {
     if (newComment.trim() === "") return;
     addCommentToStoryMutation.mutate({
@@ -109,7 +116,20 @@ const CommentSection = ({ storyId }: CommentSectionProps) => {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h4 className="font-medium">{comment.createdBy.username}</h4>
-                <span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                  {user && user?._id === comment.createdBy._id && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => deleteCommentMutation.mutate({ storyId, commentId: comment._id })}
+                      disabled={deleteCommentMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="mt-1 text-sm">{comment.content}</p>
             </div>
