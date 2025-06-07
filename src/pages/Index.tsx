@@ -10,86 +10,9 @@ import { DEFAULT_LIST_SIZE } from '@/lib/constants'
 import { getStories } from "@/services/story";
 import StoriesSkeleton from "@/components/StoriesSkeleton";
 
-// Sample data for stories
-const stories = [
-  {
-    id: "1",
-    title: "Island Paradise",
-    location: "Bali, Indonesia",
-    image: "https://images.unsplash.com/photo-1482938289607-e9573fc25ebb?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Julia Chen",
-      avatar: "",
-    },
-    likes: 128,
-    comments: 32,
-  },
-  {
-    id: "2",
-    title: "Mountain Escape",
-    location: "Swiss Alps",
-    image: "https://images.unsplash.com/photo-1458668383970-8ddd3927deed?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Alex Morgan",
-      avatar: "",
-    },
-    likes: 89,
-    comments: 14,
-  },
-  {
-    id: "3",
-    title: "Desert Journey",
-    location: "Morocco",
-    image: "https://images.unsplash.com/photo-1504893524553-b855bce32c67?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Sam Rodriguez",
-      avatar: "",
-    },
-    likes: 65,
-    comments: 8,
-  },
-  {
-    id: "4",
-    title: "Coastal Road Trip",
-    location: "California, USA",
-    image: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Taylor Swift",
-      avatar: "",
-    },
-    likes: 42,
-    comments: 7,
-  },
-  {
-    id: "5",
-    title: "Rural Countryside",
-    location: "Tuscany, Italy",
-    image: "https://images.unsplash.com/photo-1517022812141-23620dba5c23?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Marco Rossi",
-      avatar: "",
-    },
-    likes: 35,
-    comments: 5,
-  },
-  {
-    id: "6",
-    title: "Beach Getaway",
-    location: "Maldives",
-    image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
-    author: {
-      name: "Lila Kim",
-      avatar: "",
-    },
-    likes: 29,
-    comments: 4,
-  }
-];
-
 const Index = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   const handleFetchStories = useCallback(async(currentPage: number) => {
     try {
@@ -188,7 +111,8 @@ const Index = () => {
                 image={story.coverImage?.secureUrl || story.coverImage?.url || ''}
                 author={{
                   name: story.createdBy?.username || '',
-                  avatar: story.createdBy?.profileImgSecureUrl || story.createdBy?.profileImg || ''
+                  avatar: story.createdBy?.profileImgSecureUrl || story.createdBy?.profileImg || '',
+                  id: story.createdBy?._id || ''
                 }}
                 likes={story.likes}
                 comments={story.totalComments}

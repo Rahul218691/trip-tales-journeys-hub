@@ -35,7 +35,8 @@ const StoryDetail = () => {
   } = useQuery<Story>({
     queryKey: ['story', id],
     queryFn: () => getStoryDetails(id as string),
-    enabled: !!id
+    enabled: !!id,
+    refetchOnWindowFocus: false
   });
 
   const updateViewCountMutation = useMutation({
@@ -177,7 +178,7 @@ const StoryDetail = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
           <Badge variant="secondary">{story.location}</Badge>
           <span>•</span>
           <span>{story.storyReadTime} min read</span>

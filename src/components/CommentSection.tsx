@@ -37,7 +37,8 @@ const CommentSection = ({ storyId }: CommentSectionProps) => {
     }),
     getNextPageParam: (lastPage, allPages) => 
       lastPage.hasNextPage ? allPages.length + 1 : undefined,
-    initialPageParam: 1
+    initialPageParam: 1,
+    refetchOnWindowFocus: true
   });
 
   const comments = data?.pages.flatMap(page => page.items) || [];
@@ -95,7 +96,7 @@ const CommentSection = ({ storyId }: CommentSectionProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-semibold">Comments ({comments.length})</h3>
+      <h3 className="text-xl font-semibold">Comments ({data?.pages[0]?.totalComments || 0})</h3>
       
       <div className="flex gap-3">
         <Avatar>

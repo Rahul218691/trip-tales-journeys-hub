@@ -1,8 +1,10 @@
+import { useContext } from 'react'
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AuthContext } from "@/context/AuthContext";
 
 interface StoryCardProps {
   id: string;
@@ -10,6 +12,7 @@ interface StoryCardProps {
   location: string;
   image: string;
   author: {
+    id: string;
     name: string;
     avatar: string;
   };
@@ -26,6 +29,9 @@ const StoryCard = ({
   likes,
   comments,
 }: StoryCardProps) => {
+
+  const { state: { user } } = useContext(AuthContext)
+
   return (
     <Link to={`/story/${id}`}>
       <Card className="overflow-hidden card-hover animate-fade-in">
@@ -36,17 +42,21 @@ const StoryCard = ({
             className="object-fill w-full h-full transition-transform duration-300 hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 bg-background/80 hover:bg-background text-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.preventDefault();
-              // TODO: Implement save functionality
-            }}
-          >
-            <Bookmark className="h-4 w-4" />
-          </Button>
+          {
+            user && user._id !== author.id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 bg-background/80 hover:bg-background text-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.preventDefault();
+                // TODO: Implement save functionality
+              }}
+            >
+              <Bookmark className="h-4 w-4" />
+            </Button>
+            )
+          }
           <div className="absolute bottom-0 left-0 p-4 text-white">
             <h3 className="font-bold text-lg">{title}</h3>
             <p className="text-sm text-white/80">{location}</p>

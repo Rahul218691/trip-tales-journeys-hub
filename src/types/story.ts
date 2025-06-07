@@ -116,6 +116,7 @@ export interface CommentsResponse {
 
 export interface GetCommentsResponse {
   items: CommentsResponse[];
+  totalComments: number;
   totalPages: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;

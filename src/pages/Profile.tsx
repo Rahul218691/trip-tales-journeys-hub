@@ -1,15 +1,17 @@
 import { useCallback, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Calendar, Edit, Settings, MessageCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Edit, Settings } from "lucide-react";
 import ProfileUpdateModal from "@/components/ProfileUpdateModal";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile, UpdateProfileData } from "@/services/user";
 import { Skeleton } from "@/components/ui/skeleton";
+import StoriesTab from "@/components/profile/StoriesTab";
+import TripsTab from "@/components/profile/TripsTab";
+import SavedTab from "@/components/profile/SavedTab";
 
 
 const userStories = [
@@ -152,19 +154,19 @@ const Profile = () => {
               
               <div className="flex flex-wrap justify-center md:justify-start gap-6">
                 <div className="text-center">
-                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-2xl font-semibold">{data?.totalTrips}</p>
                   <p className="text-sm text-muted-foreground">Trips</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-2xl font-semibold">{data?.totalStories}</p>
                   <p className="text-sm text-muted-foreground">Stories</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-2xl font-semibold">{data?.followers}</p>
                   <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-semibold">0</p>
+                  <p className="text-2xl font-semibold">{data?.following}</p>
                   <p className="text-sm text-muted-foreground">Following</p>
                 </div>
               </div>
@@ -188,22 +190,22 @@ const Profile = () => {
         )}
 
         {/* Profile Update Modal */}
-        {
-          isUpdateModalOpen && data && <ProfileUpdateModal
-          isOpen={isUpdateModalOpen}
-          onClose={() => setIsUpdateModalOpen(false)}
-          currentUser={{
-            username: data?.username,
-            email: data.email, // TODO: Get from actual user data
-            bio: data?.bio,
-            avatar: data?.profileImg,
-          }}
-          isUpdating={updateProfileMutation.isPending}
-          onUpdate={handleProfileUpdate}
-        />
-        }
+        {isUpdateModalOpen && data && (
+          <ProfileUpdateModal
+            isOpen={isUpdateModalOpen}
+            onClose={() => setIsUpdateModalOpen(false)}
+            currentUser={{
+              username: data?.username,
+              email: data.email,
+              bio: data?.bio,
+              avatar: data?.profileImg,
+            }}
+            isUpdating={updateProfileMutation.isPending}
+            onUpdate={handleProfileUpdate}
+          />
+        )}
         
-        {/* Tabs for Stories and Trips */}
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start mb-6 border-b rounded-none h-auto p-0">
             <TabsTrigger 
@@ -227,83 +229,15 @@ const Profile = () => {
           </TabsList>
           
           <TabsContent value="stories" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {userStories.map((story) => (
-                <Link to={`/story/${story.id}`} key={story.id}>
-                  <Card className="overflow-hidden card-hover">
-                    <div className="aspect-[4/3] relative">
-                      <img 
-                        src={story.image} 
-                        alt={story.title} 
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold line-clamp-1">{story.title}</h3>
-                      <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                        <MapPin size={14} />
-                        <span>{story.location}</span>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Calendar size={14} />
-                          <span>{story.date}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {story.likes} likes
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+            <StoriesTab userId={id} />
           </TabsContent>
           
           <TabsContent value="trips" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {userTrips.map((trip) => (
-                <Link to={`/trip/${trip.id}`} key={trip.id}>
-                  <Card className="overflow-hidden card-hover">
-                    <div className="flex flex-col md:flex-row">
-                      <div className="md:w-1/3 aspect-square md:aspect-auto relative">
-                        <img 
-                          src={trip.image} 
-                          alt={trip.title} 
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                      <div className="p-4 flex-1">
-                        <h3 className="font-semibold">{trip.title}</h3>
-                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                          <MapPin size={14} />
-                          <span>{trip.location}</span>
-                        </div>
-                        <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                          <Calendar size={14} />
-                          <span>{trip.date}</span>
-                        </div>
-                        <div className="mt-4 flex items-center gap-2">
-                          <div className="bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
-                            {trip.participants} travelers
-                          </div>
-                          <Button size="sm" variant="outline" className="ml-auto gap-1">
-                            <MessageCircle size={14} />
-                            <span>Join</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+            <TripsTab trips={userTrips} />
           </TabsContent>
           
           <TabsContent value="saved" className="mt-0">
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No saved stories or trips yet.</p>
-            </div>
+            <SavedTab />
           </TabsContent>
         </Tabs>
       </div>
