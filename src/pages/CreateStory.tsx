@@ -110,8 +110,7 @@ const CreateStory = () => {
   const createStoryMutation = useMutation({
     mutationFn: createStory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stories'] });
-      toast.success('Story created successfully!');
+      toast.success('Story creation in progress!');
       navigate('/');
     },
     onError: (error) => {

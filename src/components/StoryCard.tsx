@@ -1,10 +1,13 @@
-import { useContext } from 'react'
+import { useCallback, useContext, useState } from 'react'
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { saveUnsaveStory } from '@/services/story';
 
 interface StoryCardProps {
   id: string;
@@ -18,6 +21,7 @@ interface StoryCardProps {
   };
   likes: number;
   comments: number;
+  hasSaved: boolean;
 }
 
 const StoryCard = ({
@@ -28,9 +32,58 @@ const StoryCard = ({
   author,
   likes,
   comments,
+  hasSaved
 }: StoryCardProps) => {
 
+  const { toast } = useToast();
+
   const { state: { user } } = useContext(AuthContext)
+
+  const queryClient = useQueryClient()
+
+  const [isSaved, setIsSaved] = useState(hasSaved)
+
+  const addStoryToSaveOrRemoveMutate = useMutation({
+    mutationFn: saveUnsaveStory,
+    onMutate: () => {
+      setIsSaved((prev) => !prev)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stories_list'] });
+    }
+  })
+
+  const handleSaveStory = useCallback((e: any) => {
+    if (e) e.preventDefault()
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to save stories",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (user && author.id === user._id) {
+      toast({
+        title: "You can't save your own story",
+        description: "You can only save stories created by other users",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      addStoryToSaveOrRemoveMutate.mutate(id)
+    } catch (error) {
+      console.error('Error liking story:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save the story",
+        variant: "destructive"
+      });
+    }
+  }, [user])
 
   return (
     <Link to={`/story/${id}`}>
@@ -47,13 +100,10 @@ const StoryCard = ({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 bg-background/80 hover:bg-background text-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.preventDefault();
-                // TODO: Implement save functionality
-              }}
+              className={`absolute top-2 right-2 ${isSaved ? 'bg-orange-600/90 hover:bg-orange-600 text-white' : 'bg-background/80 hover:bg-background text-foreground hover:text-foreground'}`}
+              onClick={handleSaveStory}
             >
-              <Bookmark className="h-4 w-4" />
+              <Bookmark className={`h-4 w-4 ${isSaved ? 'text-white' : ''}`} />
             </Button>
             )
           }

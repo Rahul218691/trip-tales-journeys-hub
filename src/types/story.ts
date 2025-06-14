@@ -28,6 +28,7 @@ export interface Story {
   views: number;
   storyReadTime: string;
   hasLiked?: boolean;
+  hasSaved?: boolean;
   createdBy: {
     _id: string;
     username: string;
@@ -62,7 +63,7 @@ export interface GetStoriesParams {
   search?: string;
   tripType?: string[];
   transportation?: string;
-  sortBy?: 'recent' | 'popular' | 'commented';
+  sortBy?: 'mostRecent' | 'mostPopular' | 'mostCommented';
   isMyStories?: boolean;
   userId?: string;
 }
@@ -87,6 +88,7 @@ export interface StoryResponse {
     profileImgSecureUrl: string;
   };
   createdAt: string;
+  hasSaved?: boolean;
 }
 
 export interface GetStoriesResponse {
@@ -133,3 +135,8 @@ export interface AddCommentDataResponse {
   content: string,
   createdAt: Date
 }
+
+export interface SaveStoryData {
+  storyId: string;
+}
+

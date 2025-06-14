@@ -11,34 +11,35 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
+  searchQuery: string;
+  setSearchQuery: (value: string) => void;
+  sortBy: "mostRecent" | "mostPopular" | "mostCommented";
+  setSortBy: (value: "mostRecent" | "mostPopular" | "mostCommented") => void;
+  selectedTripTypes: string[];
+  setSelectedTripTypes: (value: string[] | ((prev: string[]) => string[])) => void;
+  transportationType: string;
+  setTransportationType: (value: string) => void;
+  onApplyFilters: () => void;
+  onResetFilters: () => void;
 }
 
-const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("recent");
-  const [selectedTripTypes, setSelectedTripTypes] = useState<string[]>([]);
-  const [transportationType, setTransportationType] = useState("");
-
-  const handleApplyFilters = () => {
-    // Here you would implement the actual filtering logic
-    console.log("Applying filters:", { 
-      searchQuery, 
-      sortBy, 
-      tripTypes: selectedTripTypes,
-      transportationType 
-    });
-    onClose();
-  };
-
-  const handleResetFilters = () => {
-    setSearchQuery("");
-    setSortBy("recent");
-    setSelectedTripTypes([]);
-    setTransportationType("");
-  };
-
+const FilterModal = ({ 
+  isOpen, 
+  onClose,
+  searchQuery,
+  setSearchQuery,
+  sortBy,
+  setSortBy,
+  selectedTripTypes,
+  setSelectedTripTypes,
+  transportationType,
+  setTransportationType,
+  onApplyFilters,
+  onResetFilters
+}: FilterModalProps) => {
+  
   const toggleTripType = (type: string) => {
-    setSelectedTripTypes(prev => 
+    setSelectedTripTypes((prev: string[]) => 
       prev.includes(type) 
         ? prev.filter(t => t !== type)
         : [...prev, type]
@@ -73,18 +74,18 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
           {/* Sort by */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Sort By</h3>
-            <RadioGroup defaultValue="recent" value={sortBy} onValueChange={setSortBy}>
+            <RadioGroup value={sortBy} onValueChange={setSortBy}>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="recent" id="recent" />
-                <label htmlFor="recent" className="text-sm">Most Recent</label>
+                <RadioGroupItem value="mostRecent" id="mostRecent" />
+                <label htmlFor="mostRecent" className="text-sm">Most Recent</label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="popular" id="popular" />
-                <label htmlFor="popular" className="text-sm">Most Popular</label>
+                <RadioGroupItem value="mostPopular" id="mostPopular" />
+                <label htmlFor="mostPopular" className="text-sm">Most Popular</label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="commented" id="commented" />
-                <label htmlFor="commented" className="text-sm">Most Commented</label>
+                <RadioGroupItem value="mostCommented" id="mostCommented" />
+                <label htmlFor="mostCommented" className="text-sm">Most Commented</label>
               </div>
             </RadioGroup>
           </div>
@@ -130,10 +131,10 @@ const FilterModal = ({ isOpen, onClose }: FilterModalProps) => {
         </div>
 
         <div className="flex justify-between">
-          <Button variant="outline" onClick={handleResetFilters}>
+          <Button variant="outline" onClick={onResetFilters}>
             Reset
           </Button>
-          <Button onClick={handleApplyFilters}>
+          <Button onClick={onApplyFilters}>
             Apply Filters
           </Button>
         </div>

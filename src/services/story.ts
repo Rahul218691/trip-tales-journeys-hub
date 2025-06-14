@@ -15,7 +15,7 @@ export const getStories = async (params: GetStoriesParams): Promise<GetStoriesRe
     queryParams.append('search', params.search);
   }
   if (params.tripType && params.tripType.length > 0) {
-    params.tripType.forEach(type => queryParams.append('tripType', type));
+    queryParams.append('tripType', params.tripType.join(','));
   }
   if (params.transportation) {
     queryParams.append('transportation', params.transportation);
@@ -141,3 +141,12 @@ export const deleteComment = async(storyId: string, commentId: string): Promise<
     throw error;
   }
 }
+
+export const saveUnsaveStory = async (storyId: string): Promise<void> => {
+  try {
+    await http.put(`/api/story/save/${storyId}`);
+  } catch (error) {
+    console.error("Error saving story:", error);
+    throw error;
+  }
+} 

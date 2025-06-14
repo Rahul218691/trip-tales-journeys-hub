@@ -9,26 +9,47 @@ import Pagination from "@/components/Pagination";
 import { DEFAULT_LIST_SIZE } from '@/lib/constants'
 import { getStories } from "@/services/story";
 import StoriesSkeleton from "@/components/StoriesSkeleton";
+import useDebounce from "@/hooks/useDebounce";
 
 const Index = () => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const [sortBy, setSortBy] = useState<"mostRecent" | "mostPopular" | "mostCommented">("mostRecent");
+  const [selectedTripTypes, setSelectedTripTypes] = useState<string[]>([]);
+  const [transportationType, setTransportationType] = useState("");
 
   const handleFetchStories = useCallback(async(currentPage: number) => {
     try {
       const payload = {
         page: currentPage,
-        limit: DEFAULT_LIST_SIZE
+        limit: DEFAULT_LIST_SIZE,
+        search: debouncedSearchQuery,
+        sortBy,
+        tripType: selectedTripTypes,
+        transportation: transportationType
       }
       return await getStories(payload)
     } catch (error) {
       console.error("Error fetching stories:", error);
       throw error;
     }
-  }, [])
+  }, [debouncedSearchQuery, sortBy, selectedTripTypes, transportationType])
+
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setSortBy("mostRecent");
+    setSelectedTripTypes([]);
+    setTransportationType("");
+  };
+
+  const handleApplyFilters = () => {
+    setIsFilterModalOpen(false);
+  };
 
   const { data, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ['stories_list', currentPage],
+    queryKey: ['stories_list', currentPage, debouncedSearchQuery, sortBy, selectedTripTypes, transportationType],
     queryFn: () => handleFetchStories(currentPage),
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -108,6 +129,7 @@ const Index = () => {
                 id={story._id}
                 title={story.title}
                 location={story.location}
+                hasSaved={story.hasSaved}
                 image={story.coverImage?.secureUrl || story.coverImage?.url || ''}
                 author={{
                   name: story.createdBy?.username || '',
@@ -144,7 +166,17 @@ const Index = () => {
       {/* Filter modal */}
       <FilterModal 
         isOpen={isFilterModalOpen} 
-        onClose={() => setIsFilterModalOpen(false)} 
+        onClose={() => setIsFilterModalOpen(false)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        selectedTripTypes={selectedTripTypes}
+        setSelectedTripTypes={setSelectedTripTypes}
+        transportationType={transportationType}
+        setTransportationType={setTransportationType}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
       />
     </div>
   );
