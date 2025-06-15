@@ -30,8 +30,13 @@ export const getStories = async (params: GetStoriesParams): Promise<GetStoriesRe
     queryParams.append('userId', params.userId);
   }
 
-  const response = await http.get<GetStoriesResponse>(`/api/stories?${queryParams.toString()}`);
-  return response;
+  if (params.isSavedList) {
+    const savedListResponse = await http.get<GetStoriesResponse>(`/api/user/saved/stories?${queryParams.toString()}`);
+    return savedListResponse
+  } else {
+    const response = await http.get<GetStoriesResponse>(`/api/stories?${queryParams.toString()}`);
+    return response
+  }
 };
 
 export const createStory = async (data: CreateStoryData): Promise<string> => {

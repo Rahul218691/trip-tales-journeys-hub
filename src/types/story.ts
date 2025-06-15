@@ -66,6 +66,7 @@ export interface GetStoriesParams {
   sortBy?: 'mostRecent' | 'mostPopular' | 'mostCommented';
   isMyStories?: boolean;
   userId?: string;
+  isSavedList?:boolean;
 }
 
 export interface StoryResponse {

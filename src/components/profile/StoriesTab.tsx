@@ -10,7 +10,11 @@ import { Spinner } from '@/components/ui/spinner'
 import { Button } from "@/components/ui/button"
 import Pagination from "@/components/Pagination"
 
-const StoriesTab = ({ userId } : string) => {
+interface StoriesTabProps {
+  userId: string;
+}
+
+const StoriesTab = ({ userId }: StoriesTabProps) => {
 
     const [currentPage, setCurrentPage] = useState(1)
 

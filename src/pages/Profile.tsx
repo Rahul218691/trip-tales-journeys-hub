@@ -237,7 +237,7 @@ const Profile = () => {
           </TabsContent>
           
           <TabsContent value="saved" className="mt-0">
-            <SavedTab />
+            <SavedTab userId={id} />
           </TabsContent>
         </Tabs>
       </div>
